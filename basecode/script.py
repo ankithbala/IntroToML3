@@ -9,6 +9,8 @@ from sklearn.preprocessing import StandardScaler
 from sklearn.svm import SVC
 from sklearn.metrics import accuracy_score
 
+from sklearn.utils import resample
+
 import os
 
 def preprocess():
@@ -131,8 +133,7 @@ def blrObjFunction(initialWeights, *args):
     error_grad = np.dot(train_data.T, (theta-labeli))/n_data
     error_grad = np.reshape(error_grad, (-1,))
     
-    print("Error :", error)
-    print("--------------------")
+  
     return error, error_grad
 
 
@@ -238,8 +239,21 @@ n_train = train_data.shape[0]
 n_feature = train_data.shape[1]
 
 Y = np.zeros((n_train, n_class))
+
+
+
+
 for i in range(n_class):
     Y[:, i] = (train_label == i).astype(int).ravel()
+
+
+n_test = test_data.shape[0]
+Y_test = np.zeros((n_test, n_class))
+
+for i in range(n_class):
+    Y_test[:, i] = (test_label == i).astype(int).ravel()
+
+
 
 # Logistic Regression with Gradient Descent
 W = np.zeros((n_feature + 1, n_class))
@@ -252,8 +266,15 @@ for i in range(n_class):
     args = (train_data, labeli)
     print("For the class ", i)
     nn_params = minimize(blrObjFunction, initialWeights, jac=True, args=args, method='CG', options=opts)
-    
+
     W[:, i] = nn_params.x.reshape((n_feature + 1,))
+    print(f'Train loss: for class {i}',blrObjFunction(W[:, i], *args)[0])
+
+
+for i in range(n_class):
+    labeli = Y_test[:, i].reshape(n_test, 1)
+    args = (test_data, labeli)
+    print(f'Test loss: for class {i}',blrObjFunction(W[:, i], *args)[0])
 
 # Find the accuracy on Training Dataset
 predicted_label = blrPredict(W, train_data)
@@ -269,7 +290,7 @@ print('\n Testing set Accuracy:' + str(100 * np.mean((predicted_label == test_la
 
 
 
-'''
+
 """
 Script for Support Vector Machine
 """
@@ -278,13 +299,121 @@ print('\n\n--------------SVM-------------------\n\n')
 ##################
 # YOUR CODE HERE #
 ##################
+
+print(train_data.shape)
+sampled_training_data, sampled_train_label = resample(train_data, train_label, n_samples=10000, random_state=0)
+'''
 clf = make_pipeline(StandardScaler(), SVC(gamma='auto'))
 clf.fit(train_data, train_label)
 
 predicted_result = clf.predict(test_data)
 print(accuracy_score(test_label, predicted_result))
+'''
+
+
+#Using linear kernel (all other parameters are kept default).
+print("Using linear kernel")
+svm = SVC(kernel="linear")
+svm.fit(sampled_training_data, sampled_train_label)
+
+print("Using Train data")
+predicted_result_train = svm.predict(sampled_training_data)
+print("Training accuracy = ",accuracy_score(sampled_train_label, predicted_result_train))
+
+print("Using Validation data")
+predicted_result_val = svm.predict(validation_data)
+print("Validation accuracy = ",accuracy_score(validation_label, predicted_result_val))
+
+print("Using Test data")
+predicted_result_test = svm.predict(test_data)
+print("Testing accuracy = ",accuracy_score(test_label, predicted_result_test))
+print("-------------------------------------------")
+
+
+
+
+print("Using radial basis function with value of gamma setting to 1")
+svm = SVC(kernel="rbf", gamma=1)
+svm.fit(sampled_training_data, sampled_train_label)
+
+#print("Using Train data")
+predicted_result_train = svm.predict(sampled_training_data)
+print("Training accuracy = ",accuracy_score(sampled_train_label, predicted_result_train))
+
+#print("Using Validation data")
+predicted_result_val = svm.predict(validation_data)
+print("Validation accuracy = ",accuracy_score(validation_label, predicted_result_val))
+
+#print("Using Test data")
+predicted_result_test = svm.predict(test_data)
+print("Testing accuracy = ",accuracy_score(test_label, predicted_result_test))
+print("-------------------------------------------")
+
+
+
+
+print("Using radial basis function with default settings")
+svm = SVC(kernel="rbf")
+svm.fit(sampled_training_data, sampled_train_label)
+
+#print("Using Train data")
+predicted_result_train = svm.predict(sampled_training_data)
+print("Training accuracy = ",accuracy_score(sampled_train_label, predicted_result_train))
+
+#print("Using Validation data")
+predicted_result_val = svm.predict(validation_data)
+print("Validation accuracy = ",accuracy_score(validation_label, predicted_result_val))
+
+#print("Using Test data")
+predicted_result_test = svm.predict(test_data)
+print("Testing accuracy = ",accuracy_score(test_label, predicted_result_test))
+print("-------------------------------------------")
+
+
 
 '''
+Using radial basis function with value of gamma setting to default and varying value of C (1, 10, 20, 30, · · · , 100)
+and plot the graph of accuracy with respect to values of C in the report.
+'''
+
+svm = SVC(kernel="rbf")
+C = [1, 10, 20, 30, 40, 50, 60, 70, 80, 90, 100]
+accuracies = []
+
+for each_C in C:
+    svm.C = each_C
+    svm.fit(sampled_training_data, sampled_train_label)
+
+    accuracy = svm.score(test_data, test_label)
+    accuracies.append(accuracy)
+
+print(C)
+print(accuracies)
+plt.plot(C, accuracies)
+plt.xlabel('C')
+plt.ylabel('Accuracy')
+plt.show()
+
+
+
+
+
+#  choose the best choice of parameters
+
+svm = SVC(kernel="rbf", C=20)
+svm.fit(train_data, train_label)
+
+train_accuracy = svm.score(train_data, train_label)
+print("Train acc :", train_accuracy)
+
+validation_accuracy = svm.score(validation_data, validation_label)
+print("Validation acc :", validation_accuracy)
+
+test_accuracy = svm.score(test_data, test_label)
+print("Test acc :", test_accuracy)
+
+
+
 """
 Script for Extra Credit Part
 """
