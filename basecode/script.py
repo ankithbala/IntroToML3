@@ -190,6 +190,23 @@ def mlrObjFunction(params, *args):
     error = 0
     error_grad = np.zeros((n_feature + 1, n_class))
 
+
+    train_data=np.concatenate((np.ones((train_data.shape[0],1)), train_data), axis=1)
+    initialWeights= params.reshape(train_data.shape[1],10)
+    P_Num = np.exp(np.matmul(train_data,initialWeights))
+    P_Den = np.sum(P_Num,axis=1)
+    P_Den = np.reshape(P_Den,(-1,1))
+    theta_nk = P_Num/P_Den
+    theta_temp = theta_nk.ravel()
+    label_temp = labeli.ravel()
+    error = -np.dot(theta_temp.T,label_temp) 
+    error_grad = np.dot(train_data.T,theta_nk-labeli)
+    error_grad= error_grad.flatten()
+
+
+
+
+
     ##################
     # YOUR CODE HERE #
     ##################
@@ -215,11 +232,20 @@ def mlrPredict(W, data):
 
     """
     label = np.zeros((data.shape[0], 1))
+    data=np.concatenate((np.ones((data.shape[0],1)), data), axis=1)
+    P_Num = np.exp(np.matmul(data,W))
+    P_Den = np.sum(P_Num,axis=1)
+    P_Den = np.reshape(P_Den,(-1,1))
+    theta_nk = P_Num/P_Den
+    label = np.argmax(theta_nk.T,axis=0)
+    label= label.reshape(label.shape[0],1)
+
 
     ##################
     # YOUR CODE HERE #
     ##################
     # HINT: Do not forget to add the bias term to your input data
+
 
     return label
 
@@ -417,7 +443,7 @@ print("Test acc :", test_accuracy)
 """
 Script for Extra Credit Part
 """
-'''
+
 # FOR EXTRA CREDIT ONLY
 W_b = np.zeros((n_feature + 1, n_class))
 initialWeights_b = np.zeros((n_feature + 1, n_class))
@@ -438,4 +464,3 @@ print('\n Validation set Accuracy:' + str(100 * np.mean((predicted_label_b == va
 # Find the accuracy on Testing Dataset
 predicted_label_b = mlrPredict(W_b, test_data)
 print('\n Testing set Accuracy:' + str(100 * np.mean((predicted_label_b == test_label).astype(float))) + '%')
-'''
